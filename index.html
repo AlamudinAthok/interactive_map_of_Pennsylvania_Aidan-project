@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/Pennsylvania_County_1.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:24, minZoom:1
+        }).fitBounds([[38.08183796839525,-83.23041613209122],[44.669971174230426,-70.9868071320904]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OpenStreetMap_0');
+        map.getPane('pane_OpenStreetMap_0').style.zIndex = 400;
+        var layer_OpenStreetMap_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OpenStreetMap_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 24,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OpenStreetMap_0;
+        map.addLayer(layer_OpenStreetMap_0);
+        function pop_Pennsylvania_County_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['COUNTYFP'] !== null ? autolinker.link(feature.properties['COUNTYFP'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Name</th>\
+                        <td>' + (feature.properties['Name'] !== null ? autolinker.link(feature.properties['Name'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Population</th>\
+                        <td class="visible-with-data" id="Population">' + (feature.properties['Population'] !== null ? autolinker.link(feature.properties['Population'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Area_MilSq</th>\
+                        <td class="visible-with-data" id="Area_MilSq">' + (feature.properties['Area_MilSq'] !== null ? autolinker.link(feature.properties['Area_MilSq'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Pennsylvania_County_1_0(feature) {
+            switch(String(feature.properties['Name'])) {
+                case 'Adams':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,25,28,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Allegheny':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,34,32,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Armstrong':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,43,36,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Beaver':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(222,52,40,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Bedford':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(224,61,44,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Berks':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(226,69,49,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Blair':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,78,53,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Bradford':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,87,57,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Bucks':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(233,96,61,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Butler':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,105,65,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Cambia':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(238,114,69,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Cameron':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,123,73,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Carbon':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(242,132,77,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Centre':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(244,141,82,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Chester':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,150,86,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Clairon':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(249,158,90,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Clearfield':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,167,94,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Clinton':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,175,98,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Columbia':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,180,104,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Crawford':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,185,110,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Cumberland':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,190,115,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Dauphin':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,195,121,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Delaware':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,199,126,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Elk':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,204,132,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Erie':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,209,138,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Fayatte':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,214,143,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Forest':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,219,149,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Franklin':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,224,155,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Fulton':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,228,160,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Greene':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,233,166,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Huntingdon':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,238,171,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Indiana':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,243,177,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Jefferson':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,248,183,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Juniata':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,253,188,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lackawanna':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(252,254,190,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lancester':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,252,189,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lawrence':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(242,250,187,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lebanon':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,248,185,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lehigh':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,246,184,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Luzerne':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,244,182,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Lycoming':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(222,242,181,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'McKean':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,240,179,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Mercer':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(212,238,177,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Mifflin':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(207,236,176,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Monroe':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,234,174,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Montgomery':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(197,232,172,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Montour':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(192,230,171,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Northampton':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(187,228,169,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Northhumberland':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(182,226,168,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Perry':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(177,224,166,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Philadelphia':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(172,222,164,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Pike':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(165,217,165,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Potter':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(158,212,166,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Schuylkill':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(150,206,168,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Snyder':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(142,201,169,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Somerset':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(135,195,170,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Sullivan':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,190,172,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Susquehanna':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(119,185,173,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Tioga':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(112,179,174,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Union':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(104,174,175,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Venango':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(96,169,177,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Warren':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(89,163,178,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Washington':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(81,158,179,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Wayne':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(74,152,181,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Westmoreland':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(66,147,182,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'Wyoming':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(58,142,183,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                case 'York':
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,136,185,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_Pennsylvania_County_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.6409999999999999)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(43,131,186,0.6409999999999999)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Pennsylvania_County_1');
+        map.getPane('pane_Pennsylvania_County_1').style.zIndex = 401;
+        map.getPane('pane_Pennsylvania_County_1').style['mix-blend-mode'] = 'normal';
+        var layer_Pennsylvania_County_1 = new L.geoJson(json_Pennsylvania_County_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Pennsylvania_County_1',
+            layerName: 'layer_Pennsylvania_County_1',
+            pane: 'pane_Pennsylvania_County_1',
+            onEachFeature: pop_Pennsylvania_County_1,
+            style: style_Pennsylvania_County_1_0,
+        });
+        bounds_group.addLayer(layer_Pennsylvania_County_1);
+        map.addLayer(layer_Pennsylvania_County_1);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        setBounds();
+        var i = 0;
+        layer_Pennsylvania_County_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Name'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['Name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Pennsylvania_County_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        map.addControl(new L.Control.Search({
+            layer: layer_Pennsylvania_County_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'Name'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"Area_MilSq": "int","Population": "real","Name": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+        var i = 0;
+        layer_Pennsylvania_County_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Name'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['Name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Pennsylvania_County_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Area_MilSq = document.createElement("div");
+            div_Area_MilSq.id = "div_Area_MilSq";
+            div_Area_MilSq.className = "slider";
+            document.getElementById("menu").appendChild(div_Area_MilSq);
+            var lab_Area_MilSq = document.createElement('div');
+            lab_Area_MilSq.innerHTML  = 'Area_MilSq: <span id="val_Area_MilSq"></span>';
+            lab_Area_MilSq.className = 'filterlabel';
+            document.getElementById("menu").appendChild(lab_Area_MilSq);
+            var reset_Area_MilSq = document.createElement('div');
+            reset_Area_MilSq.innerHTML = 'clear filter';
+            reset_Area_MilSq.className = 'filterlabel';
+            lab_Area_MilSq.className = 'filterlabel';
+            reset_Area_MilSq.onclick = function() {
+                sel_Area_MilSq.noUiSlider.reset();
+            };
+            document.getElementById("menu").appendChild(reset_Area_MilSq);
+            var sel_Area_MilSq = document.getElementById('div_Area_MilSq');
+            noUiSlider.create(sel_Area_MilSq, {
+                connect: true,
+                start: [132, 1564],
+                step: 1,
+                format: wNumb({
+                    decimals: 0,
+                    }),
+                range: {
+                min: 132,
+                max: 1564
+                }
+            });
+            sel_Area_MilSq.noUiSlider.on('update', function (values) {
+            filterVals =[];
+            for (value in values){
+            filterVals.push(parseInt(value))
+            }
+            val_Area_MilSq = document.getElementById('val_Area_MilSq');
+            val_Area_MilSq.innerHTML = values.join(' - ');
+                filterFunc()
+            });
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Population = document.createElement("div");
+            div_Population.id = "div_Population";
+            div_Population.className = "slider";
+            document.getElementById("menu").appendChild(div_Population);
+            var lab_Population = document.createElement('div');
+            lab_Population.innerHTML  = 'Population: <span id="val_Population"></span>';
+            lab_Population.className = 'filterlabel';
+            document.getElementById("menu").appendChild(lab_Population);
+            var reset_Population = document.createElement('div');
+            reset_Population.innerHTML = 'clear filter';
+            reset_Population.className = 'filterlabel';
+            lab_Population.className = 'filterlabel';
+            reset_Population.onclick = function() {
+                sel_Population.noUiSlider.reset();
+            };
+            document.getElementById("menu").appendChild(reset_Population);
+            var sel_Population = document.getElementById('div_Population');
+            noUiSlider.create(sel_Population, {
+                connect: true,
+                start: [77.09, 2892340.0],
+                range: {
+                min: 77.09,
+                max: 2892340.0
+                }
+            });
+            sel_Population.noUiSlider.on('update', function (values) {
+            val_Population = document.getElementById('val_Population');
+            val_Population.innerHTML = values.join(' - ');
+                filterFunc()
+            });
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Name = document.createElement('div');
+            div_Name.id = "div_Name";
+            div_Name.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Name);
+            sel_Name = document.createElement('select');
+            sel_Name.multiple = true;
+            sel_Name.size = 10;
+            sel_Name.id = "sel_Name";
+            var Name_options_str = "<option value='' unselected></option>";
+            sel_Name.onchange = function(){filterFunc()};
+            Name_options_str  += '<option value="Adams">Adams</option>';
+            Name_options_str  += '<option value="Allegheny">Allegheny</option>';
+            Name_options_str  += '<option value="Armstrong">Armstrong</option>';
+            Name_options_str  += '<option value="Beaver">Beaver</option>';
+            Name_options_str  += '<option value="Bedford">Bedford</option>';
+            Name_options_str  += '<option value="Berks">Berks</option>';
+            Name_options_str  += '<option value="Blair">Blair</option>';
+            Name_options_str  += '<option value="Bradford">Bradford</option>';
+            Name_options_str  += '<option value="Bucks">Bucks</option>';
+            Name_options_str  += '<option value="Butler">Butler</option>';
+            Name_options_str  += '<option value="Cambia">Cambia</option>';
+            Name_options_str  += '<option value="Cameron">Cameron</option>';
+            Name_options_str  += '<option value="Carbon">Carbon</option>';
+            Name_options_str  += '<option value="Centre">Centre</option>';
+            Name_options_str  += '<option value="Chester">Chester</option>';
+            Name_options_str  += '<option value="Clairon">Clairon</option>';
+            Name_options_str  += '<option value="Clearfield">Clearfield</option>';
+            Name_options_str  += '<option value="Clinton">Clinton</option>';
+            Name_options_str  += '<option value="Columbia">Columbia</option>';
+            Name_options_str  += '<option value="Crawford">Crawford</option>';
+            Name_options_str  += '<option value="Cumberland">Cumberland</option>';
+            Name_options_str  += '<option value="Dauphin">Dauphin</option>';
+            Name_options_str  += '<option value="Delaware">Delaware</option>';
+            Name_options_str  += '<option value="Elk">Elk</option>';
+            Name_options_str  += '<option value="Erie">Erie</option>';
+            Name_options_str  += '<option value="Fayatte">Fayatte</option>';
+            Name_options_str  += '<option value="Forest">Forest</option>';
+            Name_options_str  += '<option value="Franklin">Franklin</option>';
+            Name_options_str  += '<option value="Fulton">Fulton</option>';
+            Name_options_str  += '<option value="Greene">Greene</option>';
+            Name_options_str  += '<option value="Huntingdon">Huntingdon</option>';
+            Name_options_str  += '<option value="Indiana">Indiana</option>';
+            Name_options_str  += '<option value="Jefferson">Jefferson</option>';
+            Name_options_str  += '<option value="Juniata">Juniata</option>';
+            Name_options_str  += '<option value="Lackawanna">Lackawanna</option>';
+            Name_options_str  += '<option value="Lancester">Lancester</option>';
+            Name_options_str  += '<option value="Lawrence">Lawrence</option>';
+            Name_options_str  += '<option value="Lebanon">Lebanon</option>';
+            Name_options_str  += '<option value="Lehigh">Lehigh</option>';
+            Name_options_str  += '<option value="Luzerne">Luzerne</option>';
+            Name_options_str  += '<option value="Lycoming">Lycoming</option>';
+            Name_options_str  += '<option value="McKean">McKean</option>';
+            Name_options_str  += '<option value="Mercer">Mercer</option>';
+            Name_options_str  += '<option value="Mifflin">Mifflin</option>';
+            Name_options_str  += '<option value="Monroe">Monroe</option>';
+            Name_options_str  += '<option value="Montgomery">Montgomery</option>';
+            Name_options_str  += '<option value="Montour">Montour</option>';
+            Name_options_str  += '<option value="Northampton">Northampton</option>';
+            Name_options_str  += '<option value="Northhumberland">Northhumberland</option>';
+            Name_options_str  += '<option value="Perry">Perry</option>';
+            Name_options_str  += '<option value="Philadelphia">Philadelphia</option>';
+            Name_options_str  += '<option value="Pike">Pike</option>';
+            Name_options_str  += '<option value="Potter">Potter</option>';
+            Name_options_str  += '<option value="Schuylkill">Schuylkill</option>';
+            Name_options_str  += '<option value="Snyder">Snyder</option>';
+            Name_options_str  += '<option value="Somerset">Somerset</option>';
+            Name_options_str  += '<option value="Sullivan">Sullivan</option>';
+            Name_options_str  += '<option value="Susquehanna">Susquehanna</option>';
+            Name_options_str  += '<option value="Tioga">Tioga</option>';
+            Name_options_str  += '<option value="Union">Union</option>';
+            Name_options_str  += '<option value="Venango">Venango</option>';
+            Name_options_str  += '<option value="Warren">Warren</option>';
+            Name_options_str  += '<option value="Washington">Washington</option>';
+            Name_options_str  += '<option value="Wayne">Wayne</option>';
+            Name_options_str  += '<option value="Westmoreland">Westmoreland</option>';
+            Name_options_str  += '<option value="Wyoming">Wyoming</option>';
+            Name_options_str  += '<option value="York">York</option>';
+            sel_Name.innerHTML = Name_options_str;
+            div_Name.appendChild(sel_Name);
+            var lab_Name = document.createElement('div');
+            lab_Name.innerHTML = 'Name';
+            lab_Name.className = 'filterlabel';
+            div_Name.appendChild(lab_Name);
+            var reset_Name = document.createElement('div');
+            reset_Name.innerHTML = 'clear filter';
+            reset_Name.className = 'filterlabel';
+            reset_Name.onclick = function() {
+                var options = document.getElementById("sel_Name").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Name.appendChild(reset_Name);
+        resetLabels([layer_Pennsylvania_County_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Pennsylvania_County_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Pennsylvania_County_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Pennsylvania_County_1]);
+        });
+        </script>
+    </body>
+</html>
